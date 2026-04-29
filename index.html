@@ -524,7 +524,7 @@ footer{background:var(--ink);border-top:1px solid rgba(255,255,255,0.06);padding
         <div class="gen-section-eyebrow">Live generator</div>
         <h2 class="generator-title">Write your listing now</h2>
       </div>
-      <p class="generator-sub">Paste your API key below.<br>Stays in your browser — never stored.</p>
+      <p class="generator-sub">No API key needed.<br>Sign up free and start writing.</p>
     </div>
 
     <!-- USAGE BAR -->
@@ -538,21 +538,6 @@ footer{background:var(--ink);border-top:1px solid rgba(255,255,255,0.06);padding
         <div class="usage-bar-track"><div class="usage-bar-fill" id="usageFill" style="width:0%"></div></div>
         <button class="usage-upgrade-btn" id="upgradeBtn" onclick="openModal('upgradeModal')" style="display:none;">⚡ Upgrade</button>
       </div>
-    </div>
-
-    <!-- API KEY -->
-    <div class="gen-api-row">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-      <select class="gen-api-select" id="genProvider" onchange="onProviderChange()">
-        <option value="anthropic">Claude (Anthropic)</option>
-        <option value="openai">OpenAI GPT-4o</option>
-        <option value="openai-mini">OpenAI GPT-4o mini</option>
-      </select>
-      <input class="gen-api-input" type="password" id="genApiKey" placeholder="Paste your API key — sk-ant-... or sk-proj-..." autocomplete="off" spellcheck="false">
-      <span class="gen-api-note">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        Key stays local
-      </span>
     </div>
 
     <div class="gen-error" id="genError"></div>
@@ -977,12 +962,6 @@ function updateWC() {
   document.getElementById('genWC').textContent = wc + ' words';
 }
 
-// ── PROVIDER ──
-function onProviderChange() {
-  const p = document.getElementById('genProvider').value;
-  document.getElementById('genApiKey').placeholder = p === 'anthropic' ? 'sk-ant-...' : 'sk-proj-...';
-}
-
 // ── BUILD PROMPT ──
 function buildPrompt(d) {
   return `You are an expert real estate copywriter. Write compelling, specific property listing copy.
@@ -1040,26 +1019,21 @@ function parseOutput(text) {
 let genController = null;
 
 async function generate() {
-  const apiKey = document.getElementById('genApiKey').value.trim();
-  const provider = document.getElementById('genProvider').value;
   const errEl = document.getElementById('genError');
   errEl.style.display = 'none';
 
-  if (!apiKey) {
-    errEl.textContent = 'Please paste your API key above.';
-    errEl.style.display = 'block';
-    document.getElementById('genApiKey').focus();
+  // Must be logged in
+  if (!currentUser) {
+    openModal('authModal', 'signup');
     return;
   }
 
-  // Check if logged in and usage limit
-  if (currentUser) {
-    const plan = userProfile?.plan || 'free';
-    const used = userProfile?.generations_used || 0;
-    if (plan === 'free' && used >= 3) {
-      openModal('upgradeModal');
-      return;
-    }
+  // Check usage limit
+  const plan = userProfile?.plan || 'free';
+  const used = userProfile?.generations_used || 0;
+  if (plan === 'free' && used >= 3) {
+    openModal('upgradeModal');
+    return;
   }
 
   const d = {
@@ -1081,42 +1055,35 @@ async function generate() {
   btn.disabled = true;
   btn.textContent = '⟳ Generating…';
 
-  // Reset tabs
   Object.keys(tabOutputs).forEach(k => tabOutputs[k] = '');
   const body = document.getElementById('genOutputBody');
   body.textContent = '';
   document.getElementById('genWC').textContent = '0 words';
-
-  // Switch to MLS tab
   document.querySelectorAll('.gen-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === 'mls'));
   activeTab = 'mls';
 
   let fullText = '';
 
   try {
-    let response;
     const prompt = buildPrompt(d);
 
-    if (provider === 'anthropic') {
-      response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-        signal: genController.signal,
-        body: JSON.stringify({ model: 'claude-opus-4-5', max_tokens: 2000, stream: true, messages: [{ role: 'user', content: prompt }] }),
-      });
-    } else {
-      const model = provider === 'openai-mini' ? 'gpt-4o-mini' : 'gpt-4o';
-      response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-        signal: genController.signal,
-        body: JSON.stringify({ model, max_tokens: 2000, stream: true, messages: [{ role: 'system', content: 'You are an expert real estate copywriter.' }, { role: 'user', content: prompt }] }),
-      });
-    }
+    // Get Supabase session token to authenticate with backend
+    const { data: { session } } = await sb.auth.getSession();
+    const token = session?.access_token;
+
+    const response = await fetch('/api/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      signal: genController.signal,
+      body: JSON.stringify({ prompt, userId: currentUser.id }),
+    });
 
     if (!response.ok) {
-      const j = await response.json().catch(() => ({}));
-      throw new Error(j?.error?.message || `HTTP ${response.status}`);
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err?.error || `Server error ${response.status}`);
     }
 
     const reader = response.body.getReader();
@@ -1131,7 +1098,7 @@ async function generate() {
         if (data === '[DONE]') continue;
         try {
           const json = JSON.parse(data);
-          const delta = provider === 'anthropic' ? (json?.delta?.text || '') : (json?.choices?.[0]?.delta?.content || '');
+          const delta = json?.delta?.text || '';
           fullText += delta;
           const parsed = parseOutput(fullText);
           Object.assign(tabOutputs, parsed);
@@ -1146,24 +1113,22 @@ async function generate() {
       }
     }
 
-    // Final clean render
+    // Final render
     const parsed = parseOutput(fullText);
     Object.assign(tabOutputs, parsed);
     body.textContent = tabOutputs[activeTab] || '(no content for this section)';
     updateWC();
 
-    // Increment usage in Supabase if logged in
-    if (currentUser && userProfile) {
-      const newCount = (userProfile.generations_used || 0) + 1;
-      await sb.from('profiles').update({ generations_used: newCount }).eq('id', currentUser.id);
-      userProfile.generations_used = newCount;
-      updateNavUI();
-      updateUsageUI();
-    }
+    // Increment usage in Supabase
+    const newCount = (userProfile.generations_used || 0) + 1;
+    await sb.from('profiles').update({ generations_used: newCount }).eq('id', currentUser.id);
+    userProfile.generations_used = newCount;
+    updateNavUI();
+    updateUsageUI();
 
   } catch (err) {
     if (err.name === 'AbortError') return;
-    errEl.textContent = '⚠ ' + err.message + (err.message.includes('401') ? ' — check your API key.' : '');
+    errEl.textContent = '⚠ ' + err.message;
     errEl.style.display = 'block';
     body.innerHTML = '<span class="gen-placeholder">Generation failed — see error above.</span>';
   } finally {
@@ -1172,8 +1137,6 @@ async function generate() {
     genController = null;
   }
 }
-
-function copyOutput() {
   const text = tabOutputs[activeTab];
   if (!text) return;
   const btn = document.getElementById('genCopyBtn');
@@ -1186,6 +1149,19 @@ function copyOutput() {
 
 // Enter on API key
 document.getElementById('genApiKey').addEventListener('keydown', e => { if (e.key === 'Enter') generate(); });
+
+function copyOutput() {
+  const text = tabOutputs[activeTab];
+  if (!text) return;
+  const btn = document.getElementById('genCopyBtn');
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ Copied';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// Enter key on API key — removed, no longer needed
 
 // ── INIT ──
 initAuth();
