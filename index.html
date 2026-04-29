@@ -1039,6 +1039,14 @@ async function generate() {
   const errEl = document.getElementById('genError');
   errEl.style.display = 'none';
 
+  // Re-fetch session fresh in case auth state hasn't loaded yet
+  if (!currentUser) {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session?.user) {
+      await setUser(session.user);
+    }
+  }
+
   // Must be logged in
   if (!currentUser) {
     openModal('authModal', 'signup');
