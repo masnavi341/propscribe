@@ -524,7 +524,24 @@ footer{background:var(--ink);border-top:1px solid rgba(255,255,255,0.06);padding
         <div class="gen-section-eyebrow">Live generator</div>
         <h2 class="generator-title">Write your listing now</h2>
       </div>
-      <p class="generator-sub">No API key needed.<br>Sign up free and start writing.</p>
+      <p class="generator-sub">No setup. No API key. Just sign up and write.</p>
+    </div>
+    <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.78rem;color:rgba(255,255,255,0.35);">
+        <span style="width:7px;height:7px;border-radius:50%;background:#4ade80;display:inline-block;box-shadow:0 0 6px #4ade80;"></span>
+        Powered by Claude AI
+      </div>
+      <div style="font-size:0.78rem;color:rgba(255,255,255,0.35);display:flex;align-items:center;gap:0.4rem;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Your data is never stored or sold
+      </div>
+      <div style="font-size:0.78rem;color:rgba(255,255,255,0.35);display:flex;align-items:center;gap:0.4rem;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Results in under 30 seconds
+      </div>
+      <div style="font-size:0.78rem;color:rgba(255,255,255,0.35);display:flex;align-items:center;gap:0.4rem;">
+        🌍 8 global markets
+      </div>
     </div>
 
     <!-- USAGE BAR -->
@@ -1137,18 +1154,6 @@ async function generate() {
     genController = null;
   }
 }
-  const text = tabOutputs[activeTab];
-  if (!text) return;
-  const btn = document.getElementById('genCopyBtn');
-  navigator.clipboard.writeText(text).then(() => {
-    btn.textContent = '✓ Copied';
-    btn.classList.add('copied');
-    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
-  });
-}
-
-// Enter on API key
-document.getElementById('genApiKey').addEventListener('keydown', e => { if (e.key === 'Enter') generate(); });
 
 function copyOutput() {
   const text = tabOutputs[activeTab];
@@ -1160,8 +1165,6 @@ function copyOutput() {
     setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
   });
 }
-
-// Enter key on API key — removed, no longer needed
 
 // ── INIT ──
 initAuth();
