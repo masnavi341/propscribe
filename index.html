@@ -445,7 +445,7 @@ footer{background:var(--ink);border-top:1px solid rgba(255,255,255,0.06);padding
   <h1>Write listings that <em>sell</em>,<br>in any market, anywhere</h1>
   <p class="hero-sub">PropScribe turns your property details into compelling MLS descriptions, social posts, and email copy — in seconds, in your market's style.</p>
   <div class="hero-actions">
-    <button class="btn-primary" onclick="openModal('authModal','signup')">Generate your first listing free →</button>
+    <button class="btn-primary" onclick="currentUser ? document.getElementById('generator').scrollIntoView({behavior:'smooth'}) : openModal('authModal','signup')">Generate your first listing free →</button>
     <a href="#generator" class="btn-secondary">Try the live demo</a>
   </div>
   <div class="hero-trust">
@@ -729,7 +729,7 @@ footer{background:var(--ink);border-top:1px solid rgba(255,255,255,0.06);padding
   <h2 class="final-cta-title">Write better listings.<br>In every market. <em>Today.</em></h2>
   <p class="final-cta-sub">3 free listings. No credit card. Works for agents in 8+ countries.</p>
   <div class="cta-actions">
-    <button class="btn-gold" onclick="openModal('authModal','signup')">✦ Generate my first listing free</button>
+    <button class="btn-gold" onclick="currentUser ? document.getElementById('generator').scrollIntoView({behavior:'smooth'}) : openModal('authModal','signup')">✦ Generate my first listing free</button>
     <a href="#generator" class="btn-ghost">See the live demo →</a>
   </div>
 </section>
