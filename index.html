@@ -1,21 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-KRT9SYLFYY"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-KRT9SYLFYY');
-</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PropScribe — AI Listing Copy for Agents Worldwide</title>
 <meta name="description" content="Turn property details into compelling listings in seconds. Built for real estate agents everywhere — not just North America.">
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -397,20 +386,20 @@ footer{background:var(--ink);border-top:1px solid rgba(255,255,255,0.06);padding
     <h2 class="modal-title">Upgrade your plan</h2>
     <p class="modal-sub">You've used all 3 free generations. Upgrade to keep writing listings.</p>
     <div class="upgrade-plans">
-      <div class="upgrade-plan">
+      <div class="upgrade-plan" onclick="handleUpgrade('pro')" style="cursor:pointer;">
         <div class="upgrade-plan-name">Professional</div>
         <div class="upgrade-plan-price">$29</div>
         <div class="upgrade-plan-period">/month</div>
         <div class="upgrade-plan-desc">Unlimited listings · All markets · All output types</div>
       </div>
-      <div class="upgrade-plan featured">
+      <div class="upgrade-plan featured" onclick="handleUpgrade('team')" style="cursor:pointer;">
         <div class="upgrade-plan-name">Team</div>
         <div class="upgrade-plan-price">$79</div>
         <div class="upgrade-plan-period">/month</div>
         <div class="upgrade-plan-desc">5 agents · Shared history · Brokerage branding</div>
       </div>
     </div>
-    <button class="auth-btn" onclick="handleUpgrade()">Continue to payment →</button>
+    <button class="auth-btn" onclick="handleUpgrade('pro')">Continue to payment — $29/mo →</button>
     <p class="upgrade-note" style="margin-top:0.875rem;">Powered by DodoPayments · Secure · Cancel anytime</p>
   </div>
 </div>
@@ -637,7 +626,7 @@ footer{background:var(--ink);border-top:1px solid rgba(255,255,255,0.06);padding
           <div class="gen-locked-icon">🔒</div>
           <div class="gen-locked-title">You've used your 3 free listings</div>
           <div class="gen-locked-sub">Upgrade to Professional for unlimited listings across all markets.</div>
-          <button class="gen-locked-btn" onclick="openModal('upgradeModal')">⚡ Upgrade — $29/month</button>
+          <button class="gen-locked-btn" onclick="handleUpgrade('pro')">⚡ Upgrade — $29/month</button>
           <div style="font-size:0.72rem;color:rgba(255,255,255,0.25);margin-top:0.5rem;">or <a onclick="openModal('authModal','signup')" style="color:rgba(200,168,75,0.6);cursor:pointer;">sign up for 3 free generations</a></div>
         </div>
       </div>
@@ -709,7 +698,7 @@ footer{background:var(--ink);border-top:1px solid rgba(255,255,255,0.06);padding
         <div class="pc-plan">Professional</div>
         <div class="pc-tag">For agents who list weekly.</div>
         <div class="pc-price"><sup style="color:rgba(255,255,255,0.4)">$</sup>29<sub>/mo</sub></div>
-        <button class="pc-btn" onclick="openModal('upgradeModal')">Get started</button>
+        <button class="pc-btn" onclick="handleUpgrade('pro')">Get started</button>
         <ul class="pc-features">
           <li><span class="pc-check"><svg viewBox="0 0 10 8" fill="none"><polyline points="1,4 4,7 9,1" stroke="var(--gold)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Unlimited listings</li>
           <li><span class="pc-check"><svg viewBox="0 0 10 8" fill="none"><polyline points="1,4 4,7 9,1" stroke="var(--gold)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>All 4 output types per listing</li>
@@ -721,7 +710,7 @@ footer{background:var(--ink);border-top:1px solid rgba(255,255,255,0.06);padding
         <div class="pc-plan">Team</div>
         <div class="pc-tag">For brokerages managing multiple agents.</div>
         <div class="pc-price"><sup>$</sup>79<sub>/mo</sub></div>
-        <button class="pc-btn" onclick="openModal('authModal','signup')">Contact us</button>
+        <button class="pc-btn" onclick="handleUpgrade('team')">Contact us</button>
         <ul class="pc-features">
           <li><span class="pc-check"><svg viewBox="0 0 10 8" fill="none"><polyline points="1,4 4,7 9,1" stroke="#1E3D2A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Up to 5 agents</li>
           <li><span class="pc-check"><svg viewBox="0 0 10 8" fill="none"><polyline points="1,4 4,7 9,1" stroke="#1E3D2A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Everything in Professional</li>
@@ -898,9 +887,15 @@ async function handleSignout() {
   await sb.auth.signOut();
 }
 
-function handleUpgrade() {
-  // Replace with your DodoPayments link when ready
-  alert('DodoPayments coming soon! Email hello@propscribe.one to upgrade manually in the meantime.');
+function handleUpgrade(plan) {
+  const links = {
+    pro: 'https://test.checkout.dodopayments.com/buy/pdt_0NdjdBy1iJrU3xjOuBcXV?quantity=1',
+    team: 'https://test.checkout.dodopayments.com/buy/pdt_0NdjdQDP2d70E7aQSgWnO?quantity=1',
+  };
+  const url = links[plan] || links.pro;
+  // Pass user email to prefill checkout
+  const email = currentUser?.email ? `&email=${encodeURIComponent(currentUser.email)}` : '';
+  window.open(url + email, '_blank');
 }
 
 function showError(el, msg) { el.textContent = msg; el.style.display = 'block'; }
