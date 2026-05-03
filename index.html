@@ -573,7 +573,7 @@ footer{background:var(--ink);border-top:1px solid rgba(255,255,255,0.06);padding
           <option value="commercial property">Commercial</option>
         </select>
         <div class="gen-form-label">Location</div>
-        <input class="gen-input" id="g_location" type="text" placeholder="Neighbourhood, city, country">
+        <input class="gen-input" id="g_location" type="text" placeholder="Neighbourhood, city, country" maxlength="200">
         <div class="gen-row">
           <input class="gen-input" id="g_beds" type="number" placeholder="Beds" min="0">
           <input class="gen-input" id="g_baths" type="number" placeholder="Baths" min="0" step="0.5">
@@ -583,7 +583,7 @@ footer{background:var(--ink);border-top:1px solid rgba(255,255,255,0.06);padding
           <input class="gen-input" id="g_price" type="text" placeholder="Price">
         </div>
         <div class="gen-form-label">Key features</div>
-        <input class="gen-input" id="g_features" type="text" placeholder="e.g. sea view, pool, new kitchen">
+        <input class="gen-input" id="g_features" type="text" placeholder="e.g. sea view, pool, new kitchen" maxlength="500">
         <div class="gen-form-label">Target market / portal</div>
         <select class="gen-input" id="g_market">
           <option value="UAE — Bayut / Dubizzle">🇦🇪 UAE — Bayut / Dubizzle</option>
@@ -751,7 +751,7 @@ footer{background:var(--ink);border-top:1px solid rgba(255,255,255,0.06);padding
     </div>
     <div>
       <div class="footer-col-title">Legal</div>
-      <ul class="footer-links"><li><a href="/privacy.html">Privacy Policy</a></li><li><a href="#">Terms of Service</a></li><li><a href="#">Refund Policy</a></li></ul>
+      <ul class="footer-links"><li><a href="#">Privacy Policy</a></li><li><a href="#">Terms of Service</a></li><li><a href="#">Refund Policy</a></li></ul>
     </div>
   </div>
   <div class="footer-bottom">
@@ -1114,6 +1114,11 @@ async function generate() {
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
+      if (err?.error === 'free_limit_reached') {
+        closeModal('authModal');
+        openModal('upgradeModal');
+        return;
+      }
       throw new Error(err?.error || `Server error ${response.status}`);
     }
 
@@ -1129,6 +1134,15 @@ async function generate() {
         if (data === '[DONE]') continue;
         try {
           const json = JSON.parse(data);
+          // Handle usage update from server
+          if (json?.type === 'usage') {
+            if (userProfile) {
+              userProfile.generations_used = json.used;
+              updateNavUI();
+              updateUsageUI();
+            }
+            continue;
+          }
           const delta = json?.delta?.text || '';
           fullText += delta;
           const parsed = parseOutput(fullText);
@@ -1150,12 +1164,7 @@ async function generate() {
     body.textContent = tabOutputs[activeTab] || '(no content for this section)';
     updateWC();
 
-    // Increment usage in Supabase
-    const newCount = (userProfile.generations_used || 0) + 1;
-    await sb.from('profiles').update({ generations_used: newCount }).eq('id', currentUser.id);
-    userProfile.generations_used = newCount;
-    updateNavUI();
-    updateUsageUI();
+    // Usage is now incremented server-side — no client action needed
 
   } catch (err) {
     if (err.name === 'AbortError') return;
