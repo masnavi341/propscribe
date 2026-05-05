@@ -39,12 +39,24 @@ nav.scrolled{padding:0.75rem 3rem;box-shadow:0 2px 24px rgba(0,0,0,0.06);}
 .btn-filled:hover{background:var(--green);border-color:var(--green);}
 
 /* nav user pill */
-.nav-user{display:none;align-items:center;gap:0.625rem;}
+.nav-user{display:none;align-items:center;gap:0.75rem;}
 .nav-user-avatar{width:30px;height:30px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:600;color:var(--ink);}
-.nav-user-email{font-size:0.78rem;color:var(--ink2);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.nav-user-plan{font-size:0.65rem;padding:2px 7px;border-radius:100px;background:var(--gold-dim);color:var(--gold);border:1px solid rgba(200,168,75,0.25);font-weight:600;}
+.nav-user-email{font-size:0.78rem;color:var(--ink2);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.nav-points-pill{display:flex;align-items:center;gap:0.3rem;padding:0.3rem 0.7rem;border-radius:100px;background:var(--gold-dim);border:1px solid rgba(200,168,75,0.3);font-size:0.75rem;font-weight:600;color:var(--gold-dark,#8B6914);cursor:pointer;transition:all 0.2s;text-decoration:none;}
+.nav-points-pill:hover{background:rgba(200,168,75,0.25);}
+.nav-points-pill.low{background:rgba(192,57,43,0.1);border-color:rgba(192,57,43,0.3);color:var(--danger);}
+.nav-points-icon{font-size:0.9rem;}
 .nav-signout{font-size:0.78rem;color:var(--ink3);cursor:pointer;background:none;border:none;font-family:'Outfit',sans-serif;transition:color 0.2s;}
 .nav-signout:hover{color:var(--danger);}
+
+/* claim banner */
+.claim-banner{background:linear-gradient(135deg,var(--ink) 0%,#2A2520 100%);padding:0.875rem 2rem;display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap;position:relative;z-index:800;margin-top:64px;}
+.claim-banner-text{font-size:0.85rem;color:rgba(255,255,255,0.75);font-weight:300;}
+.claim-banner-text strong{color:var(--gold);font-weight:600;}
+.claim-btn{padding:0.4rem 1.1rem;background:var(--gold);border:none;border-radius:100px;font-family:'Outfit',sans-serif;font-size:0.8rem;font-weight:600;color:var(--ink);cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:0.4rem;}
+.claim-btn:hover{background:var(--gold2);transform:translateY(-1px);}
+.claim-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+.claim-banner-close{position:absolute;right:1rem;background:none;border:none;color:rgba(255,255,255,0.4);cursor:pointer;font-size:1.1rem;line-height:1;}
 
 /* ── AUTH MODAL ── */
 .modal-overlay{position:fixed;inset:0;background:rgba(14,13,11,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem;opacity:0;pointer-events:none;transition:opacity 0.25s;backdrop-filter:blur(4px);}
@@ -422,17 +434,24 @@ footer{background:var(--ink);border-top:1px solid rgba(255,255,255,0.06);padding
     <!-- logged in -->
     <div class="nav-user" id="navLoggedIn">
       <div class="nav-user-avatar" id="navAvatar">?</div>
-      <div>
-        <div class="nav-user-email" id="navEmail"></div>
-        <div style="display:flex;align-items:center;gap:0.4rem;margin-top:1px;">
-          <span class="nav-user-plan" id="navPlan">Free</span>
-          <span style="font-size:0.7rem;color:var(--ink3);" id="navGens"></span>
-        </div>
-      </div>
+      <div class="nav-user-email" id="navEmail"></div>
+      <a href="/pricing.html" class="nav-points-pill" id="navPointsPill">
+        <span class="nav-points-icon">⬡</span>
+        <span id="navPoints">0</span> pts
+      </a>
       <button class="nav-signout" onclick="handleSignout()">Sign out</button>
     </div>
   </div>
 </nav>
+
+<!-- CLAIM BANNER -->
+<div class="claim-banner" id="claimBanner" style="display:none;">
+  <div class="claim-banner-text">🎁 You have <strong>100 free points</strong> waiting — click to claim and start generating listings</div>
+  <button class="claim-btn" id="claimBtn" onclick="claimPoints()">
+    ⬡ Claim 100 free points
+  </button>
+  <button class="claim-banner-close" onclick="document.getElementById('claimBanner').style.display='none'">✕</button>
+</div>
 
 <!-- HERO -->
 <section class="hero">
@@ -449,13 +468,13 @@ footer{background:var(--ink);border-top:1px solid rgba(255,255,255,0.06);padding
     <a href="#generator" class="btn-secondary">Try the live demo</a>
   </div>
   <div class="hero-trust">
-    <div class="trust-item">✦ 3 free listings</div>
+    <div class="trust-item">⬡ 100 free points on signup</div>
     <div class="trust-dot"></div>
     <div class="trust-item">✦ No credit card</div>
     <div class="trust-dot"></div>
     <div class="trust-item">✦ 8+ global markets</div>
     <div class="trust-dot"></div>
-    <div class="trust-item">✦ Cancel anytime</div>
+    <div class="trust-item">✦ From $5 to top up</div>
   </div>
 </section>
 
@@ -544,16 +563,20 @@ footer{background:var(--ink);border-top:1px solid rgba(255,255,255,0.06);padding
       </div>
     </div>
 
-    <!-- USAGE BAR -->
+    <!-- POINTS BAR -->
     <div class="usage-bar-wrap" id="usageBar">
       <div class="usage-login-prompt" id="usageLoggedOut">
-        <span>Sign up for <strong style="color:rgba(255,255,255,0.7);">3 free listings</strong> — no credit card needed.</span>
-        <a onclick="openModal('authModal','signup')">Create free account →</a>
+        <span>Sign up and claim <strong style="color:rgba(255,255,255,0.7);">100 free points</strong> — no credit card needed.</span>
+        <a onclick="openModal('authModal','signup')" style="color:var(--gold2);cursor:pointer;">Create free account →</a>
       </div>
-      <div id="usageLoggedIn" style="display:none;flex:1;display:none;align-items:center;gap:1rem;flex-wrap:wrap;width:100%;">
-        <div class="usage-bar-label"><strong id="usageCount">0</strong> / <span id="usageLimit">3</span> generations used</div>
+      <div id="usageLoggedIn" style="display:none;flex:1;align-items:center;gap:1rem;flex-wrap:wrap;width:100%;">
+        <div class="usage-bar-label">
+          <span style="font-size:1rem;">⬡</span>
+          <strong id="usageCount">0</strong> points remaining
+        </div>
         <div class="usage-bar-track"><div class="usage-bar-fill" id="usageFill" style="width:0%"></div></div>
-        <button class="usage-upgrade-btn" id="upgradeBtn" onclick="openModal('upgradeModal')" style="display:none;">⚡ Upgrade</button>
+        <div style="font-size:0.72rem;color:rgba(255,255,255,0.35);">10 pts per generation</div>
+        <a href="/pricing.html" class="usage-upgrade-btn" id="upgradeBtn" style="display:none;">⬡ Buy points</a>
       </div>
     </div>
 
@@ -623,11 +646,11 @@ footer{background:var(--ink);border-top:1px solid rgba(255,255,255,0.06);padding
         </div>
         <!-- LOCKED OVERLAY -->
         <div class="gen-locked" id="genLocked">
-          <div class="gen-locked-icon">🔒</div>
-          <div class="gen-locked-title">You've used your 3 free listings</div>
-          <div class="gen-locked-sub">Upgrade to Professional for unlimited listings across all markets.</div>
-          <button class="gen-locked-btn" onclick="handleUpgrade('pro')">⚡ Upgrade — $29/month</button>
-          <div style="font-size:0.72rem;color:rgba(255,255,255,0.25);margin-top:0.5rem;">or <a onclick="openModal('authModal','signup')" style="color:rgba(200,168,75,0.6);cursor:pointer;">sign up for 3 free generations</a></div>
+          <div class="gen-locked-icon">⬡</div>
+          <div class="gen-locked-title">Not enough points</div>
+          <div class="gen-locked-sub">You need 10 points to generate a listing. Top up to keep writing.</div>
+          <a href="/pricing.html" class="gen-locked-btn">⬡ Buy points — from $5</a>
+          <div style="font-size:0.72rem;color:rgba(255,255,255,0.25);margin-top:0.5rem;">or <a onclick="openModal('authModal','signup')" style="color:rgba(200,168,75,0.6);cursor:pointer;">sign up for 100 free points</a></div>
         </div>
       </div>
     </div>
@@ -650,28 +673,58 @@ footer{background:var(--ink);border-top:1px solid rgba(255,255,255,0.06);padding
   </div>
 </section>
 
-<!-- TESTIMONIALS -->
-<section class="testimonials">
+<!-- REAL OUTPUT SHOWCASE -->
+<section class="testimonials" id="examples">
   <div class="testimonials-header">
-    <div class="section-eyebrow reveal">Agent stories</div>
-    <h2 class="section-title reveal">Agents who closed more</h2>
+    <div class="section-eyebrow reveal">Real output. No edits.</div>
+    <h2 class="section-title reveal">This is what PropScribe actually writes</h2>
+    <p style="font-size:0.9rem;font-weight:300;color:var(--ink3);max-width:480px;margin:0 auto;line-height:1.6;">Generated from real property details. No human editing. Judge for yourself.</p>
   </div>
   <div class="testi-grid">
+
     <div class="testi reveal">
-      <div class="testi-stars">★★★★★</div>
-      <div class="testi-quote">"I used to spend 45 minutes on every listing. PropScribe does it in 30 seconds and the copy is better than what I write myself."</div>
-      <div class="testi-author"><div class="testi-avatar" style="background:#C8A84B;">AK</div><div><div class="testi-name">Ahmed K.</div><div class="testi-role">Luxury Broker, Dubai</div></div><span class="testi-flag">🇦🇪</span></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.875rem;">
+        <div style="font-size:0.65rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);">🇦🇪 UAE — Bayut listing</div>
+        <div style="font-size:0.7rem;color:var(--ink3);font-weight:300;">3 bed · Marina Gate · luxury tone</div>
+      </div>
+      <div class="testi-quote">"Floor-to-ceiling windows frame uninterrupted marina views that shift from electric blue by day to a cascade of city lights after dark. The open-plan living space spans 1,850 sq ft with porcelain flooring, integrated Miele appliances, and a master suite finished in Italian marble with a standalone soaking tub. Infinity pool, gymnasium, and 24-hour concierge. Minutes from Dubai Marina Mall."</div>
+      <div style="margin-top:0.875rem;padding-top:0.875rem;border-top:1px solid var(--border);font-size:0.72rem;color:var(--ink3);display:flex;align-items:center;gap:0.5rem;">
+        <span style="background:var(--green-light);color:var(--green);padding:2px 8px;border-radius:100px;font-weight:600;">Generated in 28s</span>
+        <span>MLS Description</span>
+      </div>
     </div>
+
     <div class="testi reveal" style="transition-delay:0.1s">
-      <div class="testi-stars">★★★★★</div>
-      <div class="testi-quote">"Other tools are so US-focused. PropScribe just works for Rightmove. The tone is right, the length is right. Nothing else comes close."</div>
-      <div class="testi-author"><div class="testi-avatar" style="background:#1E3D2A;">SR</div><div><div class="testi-name">Sophie R.</div><div class="testi-role">Estate Agent, London</div></div><span class="testi-flag">🇬🇧</span></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.875rem;">
+        <div style="font-size:0.65rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);">🇬🇧 UK — Rightmove listing</div>
+        <div style="font-size:0.7rem;color:var(--ink3);font-weight:300;">4 bed · Notting Hill · warm tone</div>
+      </div>
+      <div class="testi-quote">"A handsome Victorian terraced house on one of Notting Hill's most sought-after garden squares, offering 2,100 sq ft of thoughtfully updated living space across four floors. The kitchen-dining room opens directly onto a west-facing garden — a rare find this close to Portobello Road. Original cornicing and fireplaces sit alongside a recently installed Smallbone kitchen and underfloor heating throughout the ground floor."</div>
+      <div style="margin-top:0.875rem;padding-top:0.875rem;border-top:1px solid var(--border);font-size:0.72rem;color:var(--ink3);display:flex;align-items:center;gap:0.5rem;">
+        <span style="background:var(--green-light);color:var(--green);padding:2px 8px;border-radius:100px;font-weight:600;">Generated in 31s</span>
+        <span>MLS Description</span>
+      </div>
     </div>
+
     <div class="testi reveal" style="transition-delay:0.2s">
-      <div class="testi-stars">★★★★★</div>
-      <div class="testi-quote">"I manage 12 agents and PropScribe has cut our listing admin by more than half. The PropertyGuru output is spot-on for Malaysia."</div>
-      <div class="testi-author"><div class="testi-avatar" style="background:#5C3A8B;">LW</div><div><div class="testi-name">Lim Wei Xin</div><div class="testi-role">Team Lead, Kuala Lumpur</div></div><span class="testi-flag">🇲🇾</span></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.875rem;">
+        <div style="font-size:0.65rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);">🇲🇾 Malaysia — PropertyGuru</div>
+        <div style="font-size:0.7rem;color:var(--ink3);font-weight:300;">3 bed · Mont Kiara · professional tone</div>
+      </div>
+      <div class="testi-quote">"Occupying the 18th floor of Pavilion Mont Kiara, this 1,650 sq ft residence delivers unobstructed views of the KL skyline from both the living area and master bedroom. The layout flows naturally from the open kitchen — fitted with Bosch appliances and quartz surfaces — through to a generous living room with engineered timber flooring. Two covered parking bays, Olympic-length pool, and 24-hour security. Five minutes to Publika and the Mont Kiara international schools corridor."</div>
+      <div style="margin-top:0.875rem;padding-top:0.875rem;border-top:1px solid var(--border);font-size:0.72rem;color:var(--ink3);display:flex;align-items:center;gap:0.5rem;">
+        <span style="background:var(--green-light);color:var(--green);padding:2px 8px;border-radius:100px;font-weight:600;">Generated in 26s</span>
+        <span>MLS Description</span>
+      </div>
     </div>
+
+  </div>
+
+  <div style="text-align:center;margin-top:2.5rem;">
+    <p style="font-size:0.82rem;color:var(--ink3);font-weight:300;margin-bottom:1rem;">No reviews yet — we just launched. Try it yourself and see.</p>
+    <button class="btn-primary" onclick="currentUser ? document.getElementById('generator').scrollIntoView({behavior:'smooth'}) : openModal('authModal','signup')" style="display:inline-flex;">
+      Generate your own listing free →
+    </button>
   </div>
 </section>
 
@@ -787,6 +840,12 @@ async function setUser(user) {
   userProfile = data;
   updateNavUI();
   updateUsageUI();
+  // Show claim banner if points is 0 and user hasn't claimed
+  if (userProfile && userProfile.points === 0) {
+    document.getElementById('claimBanner').style.display = 'flex';
+    // Fix margin since nav is fixed
+    document.getElementById('claimBanner').style.marginTop = '64px';
+  }
 }
 
 function clearUser() {
@@ -805,11 +864,10 @@ function updateNavUI() {
     const email = currentUser.email || '';
     document.getElementById('navEmail').textContent = email;
     document.getElementById('navAvatar').textContent = email.charAt(0).toUpperCase();
-    const plan = userProfile?.plan || 'free';
-    document.getElementById('navPlan').textContent = plan.charAt(0).toUpperCase() + plan.slice(1);
-    const used = userProfile?.generations_used || 0;
-    const limit = plan === 'free' ? 3 : '∞';
-    document.getElementById('navGens').textContent = `${used}/${limit} generations`;
+    const points = userProfile?.points || 0;
+    document.getElementById('navPoints').textContent = points;
+    const pill = document.getElementById('navPointsPill');
+    pill.classList.toggle('low', points < 10);
   } else {
     out.style.display = 'flex';
     inp.style.display = 'none';
@@ -827,24 +885,19 @@ function updateUsageUI() {
   }
   loggedOut.style.display = 'none';
   loggedIn.style.display = 'flex';
-  const plan = userProfile?.plan || 'free';
-  const used = userProfile?.generations_used || 0;
-  const limit = plan === 'free' ? 3 : Infinity;
-  const isPaid = plan !== 'free';
-  document.getElementById('usageCount').textContent = used;
-  document.getElementById('usageLimit').textContent = isPaid ? '∞' : limit;
-  const pct = isPaid ? 10 : Math.min(100, (used / limit) * 100);
+  const points = userProfile?.points || 0;
+  document.getElementById('usageCount').textContent = points;
+  const pct = Math.min(100, (points / 100) * 100);
   document.getElementById('usageFill').style.width = pct + '%';
   const upgradeBtn = document.getElementById('upgradeBtn');
-  if (!isPaid) {
+  if (points < 50) {
     upgradeBtn.style.display = 'inline-block';
-    if (used >= limit) {
-      document.getElementById('genLocked').classList.add('show');
-    } else {
-      document.getElementById('genLocked').classList.remove('show');
-    }
   } else {
     upgradeBtn.style.display = 'none';
+  }
+  if (points < 10) {
+    document.getElementById('genLocked').classList.add('show');
+  } else {
     document.getElementById('genLocked').classList.remove('show');
   }
 }
@@ -887,15 +940,35 @@ async function handleSignout() {
   await sb.auth.signOut();
 }
 
+// ── CLAIM FREE POINTS ──
+async function claimPoints() {
+  if (!currentUser) { openModal('authModal', 'signup'); return; }
+  const btn = document.getElementById('claimBtn');
+  btn.disabled = true;
+  btn.textContent = '⟳ Claiming…';
+  const { error } = await sb.from('profiles')
+    .update({ points: 100 })
+    .eq('id', currentUser.id)
+    .eq('points', 0); // only if still 0 — prevents double claiming
+  if (!error) {
+    userProfile.points = 100;
+    updateNavUI();
+    updateUsageUI();
+    document.getElementById('claimBanner').style.display = 'none';
+    // Show success toast
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--white);padding:0.75rem 1.5rem;border-radius:100px;font-size:0.85rem;z-index:9999;border:1px solid var(--gold);display:flex;align-items:center;gap:0.5rem;';
+    toast.innerHTML = '<span style="color:var(--gold)">⬡</span> 100 points claimed! Start generating.';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3500);
+  } else {
+    btn.disabled = false;
+    btn.textContent = '⬡ Claim 100 free points';
+  }
+}
+
 function handleUpgrade(plan) {
-  const links = {
-    pro: 'https://test.checkout.dodopayments.com/buy/pdt_0NdjdBy1iJrU3xjOuBcXV?quantity=1',
-    team: 'https://test.checkout.dodopayments.com/buy/pdt_0NdjdQDP2d70E7aQSgWnO?quantity=1',
-  };
-  const url = links[plan] || links.pro;
-  // Pass user email to prefill checkout
-  const email = currentUser?.email ? `&email=${encodeURIComponent(currentUser.email)}` : '';
-  window.open(url + email, '_blank');
+  window.location.href = '/pricing.html';
 }
 
 function showError(el, msg) { el.textContent = msg; el.style.display = 'block'; }
@@ -1059,11 +1132,10 @@ async function generate() {
     return;
   }
 
-  // Check usage limit
-  const plan = userProfile?.plan || 'free';
-  const used = userProfile?.generations_used || 0;
-  if (plan === 'free' && used >= 3) {
-    openModal('upgradeModal');
+  // Check points
+  const points = userProfile?.points || 0;
+  if (points < 10) {
+    window.location.href = '/pricing.html';
     return;
   }
 
@@ -1114,9 +1186,8 @@ async function generate() {
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      if (err?.error === 'free_limit_reached') {
-        closeModal('authModal');
-        openModal('upgradeModal');
+      if (err?.error === 'insufficient_points') {
+        window.location.href = '/pricing.html';
         return;
       }
       throw new Error(err?.error || `Server error ${response.status}`);
@@ -1134,10 +1205,10 @@ async function generate() {
         if (data === '[DONE]') continue;
         try {
           const json = JSON.parse(data);
-          // Handle usage update from server
-          if (json?.type === 'usage') {
+          // Handle points update from server
+          if (json?.type === 'points') {
             if (userProfile) {
-              userProfile.generations_used = json.used;
+              userProfile.points = json.points;
               updateNavUI();
               updateUsageUI();
             }

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buy Points — PropScribe</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --ink:#0E0D0B;--ink2:#2C2A26;--ink3:#5C5A55;
+  --gold:#C8A84B;--gold2:#E8C96A;--gold-dim:rgba(200,168,75,0.15);
+  --cream:#FAF8F3;--cream2:#F2EFE7;--cream3:#E8E4D8;--white:#FDFCF9;
+  --green:#1E3D2A;--green-light:#EAF2EC;
+  --border:rgba(180,160,100,0.18);--border2:rgba(180,160,100,0.35);
+  --r:16px;
+}
+body{font-family:'Outfit',sans-serif;background:var(--cream);color:var(--ink);min-height:100vh;}
+nav{display:flex;align-items:center;justify-content:space-between;padding:1.1rem 3rem;border-bottom:1px solid var(--border);background:var(--white);}
+.logo{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:600;color:var(--ink);text-decoration:none;}
+.logo span{color:var(--gold);}
+.nav-back{font-size:0.85rem;color:var(--ink3);text-decoration:none;display:flex;align-items:center;gap:0.4rem;transition:color 0.2s;}
+.nav-back:hover{color:var(--ink);}
+.nav-points{display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;font-weight:600;color:var(--gold);}
+
+.page{max-width:900px;margin:0 auto;padding:4rem 2rem;}
+.page-eyebrow{font-size:0.72rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);text-align:center;margin-bottom:0.75rem;}
+.page-title{font-family:'Cormorant Garamond',serif;font-size:clamp(2rem,4vw,3rem);font-weight:300;color:var(--ink);text-align:center;letter-spacing:-0.02em;margin-bottom:0.75rem;line-height:1.15;}
+.page-sub{font-size:0.95rem;font-weight:300;color:var(--ink3);text-align:center;max-width:440px;margin:0 auto 3rem;line-height:1.6;}
+
+/* current points */
+.current-points{display:flex;align-items:center;justify-content:center;gap:1rem;background:var(--white);border:1px solid var(--border2);border-radius:var(--r);padding:1.25rem 2rem;margin-bottom:2.5rem;}
+.cp-label{font-size:0.8rem;color:var(--ink3);font-weight:300;}
+.cp-value{font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:300;color:var(--ink);display:flex;align-items:center;gap:0.375rem;}
+.cp-value span{color:var(--gold);}
+.cp-gens{font-size:0.78rem;color:var(--ink3);font-weight:300;border-left:1px solid var(--border2);padding-left:1rem;margin-left:0.5rem;}
+
+/* cost breakdown */
+.cost-breakdown{display:flex;align-items:center;justify-content:center;gap:1.5rem;flex-wrap:wrap;margin-bottom:3rem;}
+.cost-item{display:flex;align-items:center;gap:0.5rem;background:var(--white);border:1px solid var(--border);border-radius:10px;padding:0.625rem 1rem;font-size:0.82rem;color:var(--ink2);}
+.cost-item-pts{font-weight:600;color:var(--gold);}
+
+/* packages */
+.packages{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;margin-bottom:2rem;}
+.pkg{background:var(--white);border:1px solid var(--border2);border-radius:var(--r);padding:2rem 1.5rem;text-align:center;position:relative;transition:all 0.2s;}
+.pkg:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,0,0,0.07);}
+.pkg.popular{background:var(--ink);border-color:var(--ink);transform:translateY(-6px);box-shadow:0 20px 60px rgba(0,0,0,0.15);}
+.pkg.popular:hover{transform:translateY(-9px);}
+.pop-badge{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:var(--gold);color:var(--ink);font-size:0.65rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:3px 12px;border-radius:100px;white-space:nowrap;}
+.pkg-name{font-size:0.7rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);margin-bottom:0.5rem;}
+.pkg-price{font-family:'Cormorant Garamond',serif;font-size:3rem;font-weight:300;color:var(--ink);line-height:1;margin-bottom:0.25rem;}
+.pkg.popular .pkg-price{color:var(--white);}
+.pkg-price sup{font-size:1.1rem;vertical-align:top;margin-top:0.5rem;display:inline-block;}
+.pkg-points{font-size:1.1rem;font-weight:600;color:var(--gold);margin-bottom:0.25rem;}
+.pkg-gens{font-size:0.78rem;color:var(--ink3);font-weight:300;margin-bottom:1.5rem;}
+.pkg.popular .pkg-gens{color:rgba(255,255,255,0.4);}
+.pkg-perpoint{font-size:0.72rem;color:var(--ink3);margin-bottom:1.5rem;font-weight:300;}
+.pkg.popular .pkg-perpoint{color:rgba(255,255,255,0.35);}
+.pkg-btn{display:block;width:100%;padding:0.75rem;border-radius:10px;font-family:'Outfit',sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;transition:all 0.2s;text-decoration:none;border:1px solid var(--border2);color:var(--ink);background:var(--cream);}
+.pkg-btn:hover{border-color:var(--gold);}
+.pkg.popular .pkg-btn{background:var(--gold);border-color:var(--gold);color:var(--ink);}
+.pkg.popular .pkg-btn:hover{background:var(--gold2);}
+.pkg-features{list-style:none;display:flex;flex-direction:column;gap:0.5rem;margin-top:1.25rem;text-align:left;}
+.pkg-features li{font-size:0.78rem;color:var(--ink3);display:flex;align-items:center;gap:0.4rem;}
+.pkg.popular .pkg-features li{color:rgba(255,255,255,0.55);}
+.pkg-check{color:var(--gold);font-size:0.8rem;flex-shrink:0;}
+
+/* faq */
+.faq{max-width:620px;margin:3rem auto 0;}
+.faq-title{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:300;color:var(--ink);text-align:center;margin-bottom:1.5rem;letter-spacing:-0.02em;}
+.faq-item{border-bottom:1px solid var(--border);padding:1rem 0;}
+.faq-q{font-size:0.875rem;font-weight:500;color:var(--ink);cursor:pointer;display:flex;justify-content:space-between;align-items:center;}
+.faq-a{font-size:0.845rem;color:var(--ink3);font-weight:300;line-height:1.65;max-height:0;overflow:hidden;transition:max-height 0.3s,padding 0.3s;}
+.faq-a.open{max-height:200px;padding-top:0.625rem;}
+.faq-icon{font-size:1rem;color:var(--ink3);transition:transform 0.2s;}
+.faq-icon.open{transform:rotate(45deg);}
+
+/* secure note */
+.secure-note{display:flex;align-items:center;justify-content:center;gap:0.75rem;flex-wrap:wrap;margin-top:1.5rem;}
+.secure-item{display:flex;align-items:center;gap:0.4rem;font-size:0.75rem;color:var(--ink3);font-weight:300;}
+
+@media(max-width:700px){
+  .packages{grid-template-columns:1fr;}
+  .pkg.popular{transform:none;}
+  nav{padding:1rem 1.5rem;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="logo">PropScribe<span>.</span></a>
+  <a href="/" class="nav-back">← Back to generator</a>
+  <div class="nav-points" id="navPoints" style="display:none;">
+    ⬡ <span id="navPtsVal">0</span> pts
+  </div>
+</nav>
+
+<div class="page">
+  <div class="page-eyebrow">Points — no subscriptions</div>
+  <h1 class="page-title">Buy once, use anytime</h1>
+  <p class="page-sub">No monthly commitment. Points never expire. Use them whenever you need to write a listing.</p>
+
+  <!-- CURRENT POINTS -->
+  <div class="current-points" id="currentPointsBar" style="display:none;">
+    <div>
+      <div class="cp-label">Your current balance</div>
+      <div class="cp-value"><span>⬡</span> <span id="currentPts">0</span> points</div>
+    </div>
+    <div class="cp-gens" id="currentGens">= 0 generations available</div>
+  </div>
+
+  <!-- COST BREAKDOWN -->
+  <div class="cost-breakdown">
+    <div class="cost-item"><span class="cost-item-pts">⬡ 10 pts</span> Text generation</div>
+    <div class="cost-item"><span class="cost-item-pts">⬡ 20 pts</span> + Photo analysis <span style="font-size:0.7rem;color:var(--ink3);">(coming soon)</span></div>
+    <div class="cost-item"><span class="cost-item-pts">⬡ 10 pts</span> + PDF export <span style="font-size:0.7rem;color:var(--ink3);">(coming soon)</span></div>
+  </div>
+
+  <!-- PACKAGES -->
+  <div class="packages">
+
+    <div class="pkg">
+      <div class="pkg-name">Starter</div>
+      <div class="pkg-price"><sup>$</sup>5</div>
+      <div class="pkg-points">⬡ 200 points</div>
+      <div class="pkg-gens">= 20 full listing packages</div>
+      <div class="pkg-perpoint">$0.025 per point</div>
+      <a href="https://test.checkout.dodopayments.com/buy/pdt_0NdjdBy1iJrU3xjOuBcXV?quantity=1" class="pkg-btn" target="_blank">Buy $5 →</a>
+      <ul class="pkg-features">
+        <li><span class="pkg-check">✦</span> 20 text generations</li>
+        <li><span class="pkg-check">✦</span> All 4 output types</li>
+        <li><span class="pkg-check">✦</span> All 8 global markets</li>
+        <li><span class="pkg-check">✦</span> Points never expire</li>
+      </ul>
+    </div>
+
+    <div class="pkg popular">
+      <div class="pop-badge">★ Best value</div>
+      <div class="pkg-name">Pro</div>
+      <div class="pkg-price"><sup style="color:rgba(255,255,255,0.4)">$</sup>15</div>
+      <div class="pkg-points" style="color:var(--gold2);">⬡ 700 points</div>
+      <div class="pkg-gens">= 70 full listing packages</div>
+      <div class="pkg-perpoint">$0.021 per point — save 16%</div>
+      <a href="https://test.checkout.dodopayments.com/buy/pdt_0NdjdQDP2d70E7aQSgWnO?quantity=1" class="pkg-btn" target="_blank">Buy $15 →</a>
+      <ul class="pkg-features">
+        <li><span class="pkg-check">✦</span> 70 text generations</li>
+        <li><span class="pkg-check">✦</span> Priority generation speed</li>
+        <li><span class="pkg-check">✦</span> All 4 output types</li>
+        <li><span class="pkg-check">✦</span> All 8 global markets</li>
+        <li><span class="pkg-check">✦</span> Points never expire</li>
+      </ul>
+    </div>
+
+    <div class="pkg">
+      <div class="pkg-name">Agency</div>
+      <div class="pkg-price"><sup>$</sup>40</div>
+      <div class="pkg-points">⬡ 2,000 points</div>
+      <div class="pkg-gens">= 200 full listing packages</div>
+      <div class="pkg-perpoint">$0.020 per point — save 20%</div>
+      <a href="mailto:hello@propscribe.one?subject=Agency%20Plan" class="pkg-btn">Contact us →</a>
+      <ul class="pkg-features">
+        <li><span class="pkg-check">✦</span> 200 text generations</li>
+        <li><span class="pkg-check">✦</span> Team sharing (coming soon)</li>
+        <li><span class="pkg-check">✦</span> Bulk listing export</li>
+        <li><span class="pkg-check">✦</span> All 8 global markets</li>
+        <li><span class="pkg-check">✦</span> Points never expire</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <!-- SECURE NOTE -->
+  <div class="secure-note">
+    <div class="secure-item">🔒 Secure checkout via DodoPayments</div>
+    <div class="secure-item">🌍 Works globally — 135+ currencies</div>
+    <div class="secure-item">⬡ Points credited instantly</div>
+    <div class="secure-item">✉️ Receipt emailed automatically</div>
+  </div>
+
+  <!-- FAQ -->
+  <div class="faq">
+    <div class="faq-title">Questions</div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">Do points expire? <span class="faq-icon">+</span></div>
+      <div class="faq-a">No — your points never expire. Buy once, use whenever you need to write a listing.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">How many points does one generation use? <span class="faq-icon">+</span></div>
+      <div class="faq-a">A text generation costs 10 points and includes all 4 outputs — MLS description, social post, email blast, and headlines. Photo analysis (coming soon) costs an additional 20 points.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">Can I get a refund? <span class="faq-icon">+</span></div>
+      <div class="faq-a">Yes — if you're not happy with the output quality, email hello@propscribe.one within 7 days and we'll refund unused points, no questions asked.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">Why points instead of a subscription? <span class="faq-icon">+</span></div>
+      <div class="faq-a">Real estate is seasonal. Some months you list 20 properties, others you list 2. Points mean you only pay for what you actually use — no wasted subscription fees during quiet months.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">When will photo analysis and PDF export be ready? <span class="faq-icon">+</span></div>
+      <div class="faq-a">Photo analysis and PDF export are in development and coming soon. Points you buy now will work for these features when they launch.</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const { createClient } = supabase;
+const sb = createClient(
+  'https://ifdbqafoswiohxgjbijs.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmZGJxYWZvc3dpb2h4Z2piaWpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2NjQ4ODgsImV4cCI6MjA5MjI0MDg4OH0.JZNkTBoNQq6yuAeNdyWY2RMs42pKTMTRxMiaZckspBU'
+);
+
+async function initPricingAuth() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session?.user) {
+    const { data } = await sb.from('profiles').select('points').eq('id', session.user.id).single();
+    if (data) {
+      const pts = data.points || 0;
+      document.getElementById('navPoints').style.display = 'flex';
+      document.getElementById('navPtsVal').textContent = pts;
+      document.getElementById('currentPointsBar').style.display = 'flex';
+      document.getElementById('currentPts').textContent = pts;
+      document.getElementById('currentGens').textContent = `= ${Math.floor(pts / 10)} generations available`;
+    }
+  }
+}
+
+function toggleFaq(el) {
+  const answer = el.nextElementSibling;
+  const icon = el.querySelector('.faq-icon');
+  const isOpen = answer.classList.contains('open');
+  document.querySelectorAll('.faq-a').forEach(a => a.classList.remove('open'));
+  document.querySelectorAll('.faq-icon').forEach(i => i.classList.remove('open'));
+  if (!isOpen) { answer.classList.add('open'); icon.classList.add('open'); }
+}
+
+initPricingAuth();
+</script>
+</body>
+</html>
